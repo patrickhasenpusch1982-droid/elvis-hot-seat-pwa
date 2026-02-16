@@ -775,7 +775,7 @@ function setView(view){
   if (back) back.hidden = (view !== "game");
 
   if (view === "menu"){
-    try{ speechSynthesis?.cancel?.(); }catch(e){}
+    try{ if (window.speechSynthesis && window.speechSynthesis.cancel) window.speechSynthesis.cancel(); }catch(e){}
     renderMenuHighscores();
   }else{
     // game view
