@@ -209,3 +209,7 @@ body{
 .menuScores__title{ font-weight: 1000; font-size: 18px; }
 .menuScores__actions{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; }
 .menuScores__actions .btn{ padding: 10px 12px; }
+
+
+/* Ensure hidden works even if layout CSS overrides it */
+[hidden]{ display:none !important; }

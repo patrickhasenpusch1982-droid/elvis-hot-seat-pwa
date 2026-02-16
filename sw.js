@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "elvis-hot-seat-v11";
+const CACHE_NAME = "elvis-hot-seat-v12";
 const ASSETS = [
   "./",
   "./index.html",
