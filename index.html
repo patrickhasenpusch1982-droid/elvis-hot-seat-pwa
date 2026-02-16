@@ -16,6 +16,7 @@
 <body>
   <div class="app">
     <header class="topbar">
+      <button class="iconbtn iconbtn--small" id="backBtn" aria-label="Back" hidden>←</button>
       <div class="brand">
         <div class="brand__title">Elvis Hot Seat</div>
         <div class="brand__sub" id="langLabel">DE/EN</div>
@@ -28,7 +29,34 @@
 </div>
     </header>
 
-    <main class="stage">
+    
+    <main class="menu" id="menuView">
+      <section class="menuHero card">
+        <div class="menuHero__title">Elvis Hot Seat</div>
+        <div class="menuHero__sub" id="menuSub">Hardcore Quiz · DE/EN</div>
+        <div class="menuHero__row">
+          <button class="btn btn--primary" id="startClassicBtn">Start Classic 15</button>
+          <button class="btn btn--ghost" id="startEndlessBtn">Start Endless</button>
+        </div>
+        <div class="menuHero__small" id="menuHint">
+          iPhone: Öffne im Safari und füge „Zum Home-Bildschirm“ hinzu.
+        </div>
+      </section>
+
+      <section class="menuScores card">
+        <div class="menuScores__head">
+          <div class="menuScores__title">Highscores</div>
+          <div class="menuScores__actions">
+            <button class="btn btn--ghost" id="toggleScoresModeBtn" type="button">Best per Player</button>
+            <button class="btn btn--ghost" id="resetScoresBtn2" type="button">Reset</button>
+          </div>
+        </div>
+        <div class="scores__hint" id="menuScoresHint">Top Spieler auf diesem Gerät (lokal gespeichert).</div>
+        <div class="scores__list" id="menuScoresList"></div>
+      </section>
+    </main>
+
+<main class="stage" id="gameView" hidden>
       <section class="avatar card">
         <div class="avatar__bubble">
           <div class="avatar__icon" id="avatarIcon">🎤</div>

@@ -438,6 +438,8 @@ function updateWonUI(){
 
 const state = {
   playerName: "",
+  view: "menu", // menu | game
+  menuScoresMode: "best", // best | all
   correctCount: 0,
   wonValue: 0,
   lastProgressSaved: 0,
@@ -761,6 +763,79 @@ function escapeHtml(str){
   }[m]));
 }
 
+
+function setView(view){
+  state.view = view;
+  const menu = $("#menuView");
+  const game = $("#gameView");
+  const back = $("#backBtn");
+
+  if (menu) menu.hidden = (view !== "menu");
+  if (game) game.hidden = (view !== "game");
+  if (back) back.hidden = (view !== "game");
+
+  if (view === "menu"){
+    try{ speechSynthesis?.cancel?.(); }catch(e){}
+    renderMenuHighscores();
+  }else{
+    // game view
+    showInstallHint();
+    renderQuestion();
+  }
+}
+
+function leaderboardBestPerPlayer(list){
+  const map = new Map();
+  for (const e of list){
+    const name = (e.name || "").trim() || "Player";
+    const prev = map.get(name);
+    if (!prev || (e.score||0) > (prev.score||0)){
+      map.set(name, e);
+    }
+  }
+  return Array.from(map.values());
+}
+
+function renderMenuHighscores(){
+  const el = $("#menuScoresList");
+  const hint = $("#menuScoresHint");
+  if (!el) return;
+
+  const list = loadHighscores();
+  const mode = state.menuScoresMode || "best"; // best | all
+
+  let rows = list.slice();
+  if (mode === "best"){
+    rows = leaderboardBestPerPlayer(rows);
+  }
+  rows.sort((a,b) => (b.score - a.score) || (b.completedLevels - a.completedLevels));
+
+  if (hint){
+    hint.textContent = (mode === "best")
+      ? t(state.lang, "Beste Werte pro Spieler (lokal gespeichert).", "Best score per player (stored locally).")
+      : t(state.lang, "Alle Einträge (lokal gespeichert).", "All entries (stored locally).");
+  }
+
+  if (!rows.length){
+    el.innerHTML = `<div class="scores__hint">${t(state.lang,"Noch keine Scores. Starte ein Spiel!","No scores yet. Start a game!")}</div>`;
+    return;
+  }
+
+  el.innerHTML = "";
+  rows.slice(0, 50).forEach((s, i) => {
+    const row = document.createElement("div");
+    row.className = "scoreRow";
+    row.innerHTML = `
+      <div class="scoreRow__rank">${i+1}.</div>
+      <div class="scoreRow__name">${escapeHtml(s.name || "")}
+        <div class="scoreRow__meta">${escapeHtml((s.mode||"") + " · L" + (s.completedLevels||0))}</div>
+      </div>
+      <div class="scoreRow__value">${formatMoney(s.score || 0)}</div>
+    `;
+    el.appendChild(row);
+  });
+}
+
 // ---------- Settings / install hints ----------
 function isIOS(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -814,6 +889,7 @@ function addHighscore(reason){
   list.sort((a,b) => (b.score - a.score) || (b.completedLevels - a.completedLevels));
   const top10 = list.slice(0,10);
   saveHighscores(top10);
+  if (state.view === "menu") renderMenuHighscores();
 }
 
 
@@ -824,6 +900,33 @@ function on(sel, evt, handler){
 }
 
 // ---------- Events ----------
+
+on("#startClassicBtn","click", () => {
+  state.mode = "classic";
+  setView("game");
+  startRun();
+});
+on("#startEndlessBtn","click", () => {
+  state.mode = "endless";
+  setView("game");
+  startRun();
+});
+on("#backBtn","click", () => {
+  setView("menu");
+});
+on("#toggleScoresModeBtn","click", () => {
+  state.menuScoresMode = (state.menuScoresMode === "best") ? "all" : "best";
+  const btn = $("#toggleScoresModeBtn");
+  if (btn){
+    btn.textContent = (state.menuScoresMode === "best") ? "Best per Player" : "All Entries";
+  }
+  renderMenuHighscores();
+});
+on("#resetScoresBtn2","click", () => {
+  saveHighscores([]);
+  renderMenuHighscores();
+});
+
 on("#nextBtn","click", next);
 on("#ll5050","click", lifeline5050);
 on("#llAudience","click", lifelineAudience);
@@ -872,5 +975,6 @@ on("#applyBtn","click", (ev) => {
   showInstallHint();
   renderLadder();
   await loadDB();
-  startRun();
+  // Start on main menu
+  setView("menu");
 })();
