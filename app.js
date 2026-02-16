@@ -5,6 +5,44 @@
  */
 
 // ---------- Utilities ----------
+
+// ---------- Storage / Highscores ----------
+const STORAGE_KEYS = {
+  playerName: "ehs_player_name_v1",
+  highscores: "ehs_highscores_v1"
+};
+
+function loadPlayerName(){
+  try{
+    return localStorage.getItem(STORAGE_KEYS.playerName) || "";
+  }catch(e){ return ""; }
+}
+function savePlayerName(name){
+  try{
+    localStorage.setItem(STORAGE_KEYS.playerName, name);
+  }catch(e){}
+}
+function loadHighscores(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEYS.highscores);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  }catch(e){ return []; }
+}
+function saveHighscores(arr){
+  try{
+    localStorage.setItem(STORAGE_KEYS.highscores, JSON.stringify(arr));
+  }catch(e){}
+}
+function formatMoney(n){
+  // display like 12.5K, 1M, etc.
+  if (n >= 1_000_000) return (n/1_000_000).toFixed(n%1_000_000===0?0:1) + "M";
+  if (n >= 1_000) return (n/1_000).toFixed(n%1_000===0?0:1) + "K";
+  return String(n);
+}
+
+
 const $ = (sel) => document.querySelector(sel);
 
 function mulberry32(seed) {
@@ -36,8 +74,9 @@ function t(lang, de, en) {
   return `${de}\n\n${en}`;
 }
 
+
 // ---------- Sample DB (expandable) ----------
-const DB = {
+const defaultDB = {
   studios: [
     { id:"sun_memphis", name:"Sun Studio", city:"Memphis" },
     { id:"american_sound", name:"American Sound Studio", city:"Memphis" },
@@ -80,10 +119,35 @@ const DB = {
     { id:"burning_love", title:"Burning Love", recordingDate:"1972-03-28", studioId:"rca_hollywood", writers:["dennis_linde"], singleReleased:"1972-08-01", bSide:"It's a Matter of Time" },
   ]
 };
+
+let DB = defaultDB;
 const byId = (arr) => Object.fromEntries(arr.map(x => [x.id, x]));
-const STUDIO = byId(DB.studios);
-const PERSON = byId(DB.people);
-const FILM = byId(DB.films);
+let STUDIO = byId(DB.studios);
+let PERSON = byId(DB.people);
+let FILM = byId(DB.films);
+
+function setDB(db){
+  DB = db;
+  STUDIO = byId(DB.studios);
+  PERSON = byId(DB.people);
+  FILM = byId(DB.films);
+}
+
+async function loadDB(){
+  // Load external JSON if present (recommended for easy editing)
+  try{
+    const res = await fetch("./elvis-db.json", { cache: "no-cache" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const db = await res.json();
+    if (!db || !db.songs || !db.studios) throw new Error("Invalid DB");
+    setDB(db);
+    console.log("Loaded elvis-db.json");
+  }catch(e){
+    // fallback to embedded defaultDB
+    setDB(defaultDB);
+    console.log("Using embedded defaultDB", e);
+  }
+}
 
 // ---------- Phrase banks ----------
 const Phrase = {
@@ -327,9 +391,47 @@ function pickRecipe(state){
 }
 
 // ---------- Game state ----------
-const PrizeSteps = ["50","100","200","400","800","1.6K","3.2K","6.4K","12.5K","25K","50K","100K","250K","500K","1M"];
+const PrizeSteps =
+
+// Prize ladder values (not copying TV branding; simple custom ladder)
+const PRIZE_VALUES = [50,100,200,400,800,1600,3200,6400,12500,25000,50000,100000,250000,500000,1000000];
+
+function getWonValue(){
+  if (state.mode !== "classic") {
+    // Endless: simple scaling (adjust as you like)
+    // Won value based on completed levels (level-1 correct answers)
+    const completed = Math.max(0, state.level - 1);
+    return completed * 100; // 100 points per level
+  }
+  const completed = Math.max(0, state.level - 1);
+  if (completed <= 0) return 0;
+  const idx = Math.min(PRIZE_VALUES.length, completed) - 1;
+  return PRIZE_VALUES[idx];
+}
+
+function updateWonUI(){
+  const won = getWonValue();
+  const name = state.playerName || (state.lang === "de" ? "Spieler" : "Player");
+  const wonLabel = formatMoney(won);
+  const meta = t(state.lang, `Spieler: ${name} · Gewonnen: ${wonLabel}`, `Player: ${name} · Won: ${wonLabel}`);
+  const metaEl = document.querySelector("#playerMeta");
+  if (metaEl) metaEl.textContent = meta;
+
+  const amtEl = document.querySelector("#winningsAmount");
+  if (amtEl) amtEl.textContent = wonLabel;
+
+  const noteEl = document.querySelector("#winningsNote");
+  if (noteEl){
+    noteEl.textContent = (state.mode === "classic")
+      ? t(state.lang, "Classic 15: sichere Stufe nach jeder richtigen Antwort.", "Classic 15: safe step after each correct answer.")
+      : t(state.lang, "Endless: Punkte pro Level.", "Endless: points per level.");
+  }
+}
+
+ ["50","100","200","400","800","1.6K","3.2K","6.4K","12.5K","25K","50K","100K","250K","500K","1M"];
 
 const state = {
+  playerName: "",
   lang: "bilingual", // de | en | bilingual
   mode: "classic",   // classic | endless
   seed: Date.now() >>> 0,
@@ -379,6 +481,7 @@ function renderQuestion(){
   renderAnswers();
   renderLadder();
   renderHelper();
+  updateWonUI();
 
   // lifeline buttons
   $("#ll5050").disabled = state.used.ll5050;
@@ -450,6 +553,10 @@ function startRun(customSeed){
   state.level = 1;
   state.rng = mulberry32((state.seed ^ 0x9E3779B9) >>> 0);
 
+  if (!state.playerName){
+    state.playerName = loadPlayerName() || \"\";
+  }
+
   state.used = { ll5050:false, llAudience:false, llPhone:false };
   loadQuestion();
 
@@ -502,6 +609,7 @@ function onAnswer(idx){
       "Wrong. Back to level 1."
     );
     // Give a moment for the user to see the result/explanation, then restart.
+    addHighscore('wrong');
     setTimeout(() => restartRun(msg), 1300);
   }
 }
@@ -513,6 +621,7 @@ function next(){
     return;
   }
   if (state.mode === "classic" && state.level >= 15){
+    addHighscore('finish');
     speak(t(state.lang,"Ende. Respekt.","Finished. Respect."), state.lang === "en" ? "en" : "de");
     return;
   }
@@ -583,7 +692,42 @@ function lifelinePhone(){
     `Phone-a-friend: I think it's ${letter}… but I'm not 100% sure.`
   );
   renderHelper();
+  updateWonUI();
   speak(state.phone.split("\n\n")[0], state.lang === "en" ? "en" : "de");
+}
+
+
+function renderHighscores(){
+  const list = loadHighscores();
+  const el = document.querySelector("#scoresList");
+  const hint = document.querySelector("#scoresHint");
+  if (!el) return;
+
+  if (hint){
+    hint.textContent = t(state.lang, "Top 10 auf diesem Gerät (lokal gespeichert).", "Top 10 on this device (stored locally).");
+  }
+
+  if (!list.length){
+    el.innerHTML = `<div class="scores__hint">${t(state.lang,"Noch keine Scores.","No scores yet.")}</div>`;
+    return;
+  }
+
+  el.innerHTML = "";
+  list.forEach((s, i) => {
+    const row = document.createElement("div");
+    row.className = "scoreRow";
+    row.innerHTML = `
+      <div class="scoreRow__rank">${i+1}.</div>
+      <div class="scoreRow__name">${escapeHtml(s.name || "")}</div>
+      <div class="scoreRow__value">${formatMoney(s.score || 0)}</div>
+    `;
+    el.appendChild(row);
+  });
+}
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, (m) => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+  }[m]));
 }
 
 // ---------- Settings / install hints ----------
@@ -619,14 +763,48 @@ function unlockTTS(){
   try { speechSynthesis.getVoices(); } catch(e){}
 }
 
+
+function addHighscore(reason){
+  const score = getWonValue();
+  const completed = Math.max(0, state.level - 1);
+  const name = (state.playerName || "").trim() || (state.lang === "de" ? "Spieler" : "Player");
+  // Only record if player earned something or reached at least 1 correct answer
+  if (completed <= 0 && score <= 0) return;
+
+  const entry = {
+    name,
+    score,
+    mode: state.mode,
+    completedLevels: completed,
+    when: new Date().toISOString()
+  };
+  const list = loadHighscores();
+  list.push(entry);
+  // Sort high to low
+  list.sort((a,b) => (b.score - a.score) || (b.completedLevels - a.completedLevels));
+  const top10 = list.slice(0,10);
+  saveHighscores(top10);
+}
+
 // ---------- Events ----------
 $("#nextBtn").addEventListener("click", next);
 $("#ll5050").addEventListener("click", lifeline5050);
 $("#llAudience").addEventListener("click", lifelineAudience);
 $("#llPhone").addEventListener("click", lifelinePhone);
 
+$("#scoresBtn").addEventListener("click", () => {
+  renderHighscores();
+  $("#scoresModal").showModal();
+});
+
+$("#resetScoresBtn").addEventListener("click", () => {
+  saveHighscores([]);
+  renderHighscores();
+});
+
 $("#settingsBtn").addEventListener("click", () => {
   $("#seedInput").value = "";
+  $("#nameInput").value = state.playerName || loadPlayerName() || "";
   $("#langSelect").value = state.lang;
   $("#modeSelect").value = state.mode;
   $("#seedInput").placeholder = String(state.seed);
@@ -636,10 +814,14 @@ $("#settingsBtn").addEventListener("click", () => {
 $("#applyBtn").addEventListener("click", (ev) => {
   ev.preventDefault();
   const lang = $("#langSelect").value;
+  const nameStr = ($("#nameInput").value || "").trim();
   const mode = $("#modeSelect").value;
   const seedStr = $("#seedInput").value.trim();
 
   state.lang = lang;
+
+  state.playerName = nameStr;
+  savePlayerName(nameStr);
   state.mode = mode;
 
   const seed = seedStr ? (parseInt(seedStr, 10) >>> 0) : undefined;
@@ -649,8 +831,9 @@ $("#applyBtn").addEventListener("click", (ev) => {
 });
 
 // Initial boot
-(function init(){
+(async function init(){
   showInstallHint();
   renderLadder();
+  await loadDB();
   startRun();
 })();

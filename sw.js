@@ -1,11 +1,12 @@
 
-const CACHE_NAME = "elvis-hot-seat-v1";
+const CACHE_NAME = "elvis-hot-seat-v5";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.json",
+  "./elvis-db.json",
   "./icon-192.png",
   "./icon-512.png",
   "./apple-touch-icon.png"
@@ -25,9 +26,29 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
+  const url = new URL(req.url);
+
+  // Always try network first for the data file so edits go live immediately.
+  if (url.pathname.endsWith("/elvis-db.json") || url.pathname.endsWith("elvis-db.json")) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // App shell: cache-first
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req).then((res) => {
       const copy = res.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+      return res;
+    }).catch(() => caches.match("./index.html")))
+  );
+});
       caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
       return res;
     }).catch(() => caches.match("./index.html")))

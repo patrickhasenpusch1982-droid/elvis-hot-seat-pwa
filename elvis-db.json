@@ -1,0 +1,265 @@
+{
+  "studios": [
+    {
+      "id": "sun_memphis",
+      "name": "Sun Studio",
+      "city": "Memphis"
+    },
+    {
+      "id": "american_sound",
+      "name": "American Sound Studio",
+      "city": "Memphis"
+    },
+    {
+      "id": "rca_nashville",
+      "name": "RCA Victor (Nashville)",
+      "city": "Nashville"
+    },
+    {
+      "id": "rca_studio_b",
+      "name": "RCA Studio B",
+      "city": "Nashville"
+    },
+    {
+      "id": "radio_recorders",
+      "name": "Radio Recorders",
+      "city": "Hollywood"
+    },
+    {
+      "id": "western_recorders",
+      "name": "Western Recorders",
+      "city": "Hollywood"
+    },
+    {
+      "id": "rca_hollywood",
+      "name": "RCA (Hollywood)",
+      "city": "Hollywood"
+    }
+  ],
+  "people": [
+    {
+      "id": "chips_moman",
+      "name": "Chips Moman",
+      "roles": [
+        "producer"
+      ]
+    },
+    {
+      "id": "mark_james",
+      "name": "Mark James",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "mac_davis",
+      "name": "Mac Davis",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "billy_strange",
+      "name": "Billy Strange",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "dennis_linde",
+      "name": "Dennis Linde",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "walter_earl_brown",
+      "name": "W. Earl Brown",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "lou_handman",
+      "name": "Lou Handman",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "roy_turk",
+      "name": "Roy Turk",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "mae_boren_axton",
+      "name": "Mae Boren Axton",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "tommy_durden",
+      "name": "Tommy Durden",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "arthur_crudup",
+      "name": "Arthur Crudup",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "leiber_stoller",
+      "name": "Jerry Leiber & Mike Stoller",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "eddie_rabbitt",
+      "name": "Eddie Rabbitt",
+      "roles": [
+        "songwriter"
+      ]
+    },
+    {
+      "id": "dick_heard",
+      "name": "Dick Heard",
+      "roles": [
+        "songwriter"
+      ]
+    }
+  ],
+  "films": [
+    {
+      "id": "film_jailhouse_rock",
+      "title": "Jailhouse Rock",
+      "year": 1957
+    },
+    {
+      "id": "film_live_a_little",
+      "title": "Live a Little, Love a Little",
+      "year": 1968
+    }
+  ],
+  "songs": [
+    {
+      "id": "thats_all_right",
+      "title": "That's All Right",
+      "recordingDate": "1954-07-05",
+      "studioId": "sun_memphis",
+      "writers": [
+        "arthur_crudup"
+      ],
+      "singleReleased": "1954-07-19",
+      "bSide": "Blue Moon of Kentucky"
+    },
+    {
+      "id": "heartbreak_hotel",
+      "title": "Heartbreak Hotel",
+      "recordingDate": "1956-01-10",
+      "studioId": "rca_nashville",
+      "writers": [
+        "mae_boren_axton",
+        "tommy_durden"
+      ],
+      "singleReleased": "1956-01-27",
+      "bSide": "I Was the One"
+    },
+    {
+      "id": "jailhouse_rock",
+      "title": "Jailhouse Rock",
+      "recordingDate": "1957-04-30",
+      "studioId": "radio_recorders",
+      "writers": [
+        "leiber_stoller"
+      ],
+      "filmId": "film_jailhouse_rock"
+    },
+    {
+      "id": "are_you_lonesome_tonight",
+      "title": "Are You Lonesome Tonight?",
+      "recordingDate": "1960-04-04",
+      "studioId": "rca_studio_b",
+      "writers": [
+        "lou_handman",
+        "roy_turk"
+      ],
+      "singleReleased": "1960-11-01",
+      "bSide": "I Gotta Know"
+    },
+    {
+      "id": "a_little_less_conversation",
+      "title": "A Little Less Conversation",
+      "recordingDate": "1968-03-07",
+      "studioId": "western_recorders",
+      "writers": [
+        "mac_davis",
+        "billy_strange"
+      ],
+      "singleReleased": "1968-09-03",
+      "filmId": "film_live_a_little"
+    },
+    {
+      "id": "if_i_can_dream",
+      "title": "If I Can Dream",
+      "recordingDate": "1968-06-23",
+      "studioId": "western_recorders",
+      "writers": [
+        "walter_earl_brown"
+      ]
+    },
+    {
+      "id": "in_the_ghetto",
+      "title": "In the Ghetto",
+      "recordingDate": "1969-01-20",
+      "studioId": "american_sound",
+      "writers": [
+        "mac_davis"
+      ],
+      "producerId": "chips_moman",
+      "singleReleased": "1969-04-14",
+      "bSide": "Any Day Now"
+    },
+    {
+      "id": "suspicious_minds",
+      "title": "Suspicious Minds",
+      "recordingDate": "1969-01-22",
+      "studioId": "american_sound",
+      "writers": [
+        "mark_james"
+      ],
+      "producerId": "chips_moman"
+    },
+    {
+      "id": "kentucky_rain",
+      "title": "Kentucky Rain",
+      "recordingDate": "1969-02-19",
+      "studioId": "american_sound",
+      "writers": [
+        "eddie_rabbitt",
+        "dick_heard"
+      ],
+      "producerId": "chips_moman",
+      "singleReleased": "1970-01-29",
+      "bSide": "My Little Friend"
+    },
+    {
+      "id": "burning_love",
+      "title": "Burning Love",
+      "recordingDate": "1972-03-28",
+      "studioId": "rca_hollywood",
+      "writers": [
+        "dennis_linde"
+      ],
+      "singleReleased": "1972-08-01",
+      "bSide": "It's a Matter of Time"
+    }
+  ]
+}

@@ -36,3 +36,7 @@ The combinations explode quickly (data × templates × synonyms × distractors).
 
 ## Legal note
 Avoid copying protected TV branding and ensure rights for any Elvis imagery/branding you distribute.
+
+
+## Daten bearbeiten (ohne Code)
+Bearbeite **elvis-db.json** direkt im GitHub-Repo (Web Editor). Danach ist es live.

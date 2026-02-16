@@ -159,3 +159,25 @@ body{
 .modal__row{ display:flex; gap:10px; margin-top: 12px; }
 .modal__row .btn{ flex:1; }
 .tiny{ margin-top: 10px; color: var(--muted); font-size: 12px; }
+
+
+.topbar__actions{ margin-left:auto; display:flex; gap:10px; align-items:center; }
+.brand__meta{ color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+.winnings{ padding: 14px; }
+.winnings__title{ font-weight: 900; font-size: 14px; color: var(--text); opacity: .95; }
+.winnings__amount{ font-weight: 1000; font-size: 30px; color: var(--accent); margin-top: 8px; letter-spacing:.2px; }
+.winnings__note{ color: var(--muted); font-size: 12px; margin-top: 6px; line-height:1.25; }
+
+.scores__list{ display:flex; flex-direction:column; gap:8px; margin-top: 10px; margin-bottom: 8px; }
+.scoreRow{
+  display:flex; align-items:center; gap:10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+}
+.scoreRow__rank{ width: 22px; font-weight: 900; opacity:.9; }
+.scoreRow__name{ flex:1; font-weight: 800; }
+.scoreRow__value{ font-weight: 900; color: var(--accent); }
+.scores__hint{ color: var(--muted); font-size: 12px; }

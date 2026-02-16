@@ -19,9 +19,13 @@
       <div class="brand">
         <div class="brand__title">Elvis Hot Seat</div>
         <div class="brand__sub" id="langLabel">DE/EN</div>
+<div class="brand__meta" id="playerMeta">Player: — · Won: 0</div>
       </div>
 
-      <button class="iconbtn" id="settingsBtn" aria-label="Settings">⚙️</button>
+      <div class="topbar__actions">
+  <button class="iconbtn" id="scoresBtn" aria-label="Highscores">🏆</button>
+  <button class="iconbtn" id="settingsBtn" aria-label="Settings">⚙️</button>
+</div>
     </header>
 
     <main class="stage">
@@ -63,6 +67,12 @@
 
       <section class="helper" id="helper" hidden></section>
 
+      <section class="winnings card" id="winningsCard">
+        <div class="winnings__title" id="winningsTitle">Gewonnene Summe / Winnings</div>
+        <div class="winnings__amount" id="winningsAmount">0</div>
+        <div class="winnings__note" id="winningsNote">Classic 15: sichere Stufe nach jeder richtigen Antwort.</div>
+      </section>
+
       <button class="btn btn--primary" id="nextBtn">Next</button>
 
       <div class="footnote">
@@ -92,6 +102,12 @@
         </label>
 
         <label class="field">
+          <span>Name</span>
+          <input id="nameInput" placeholder="Your name" maxlength="20" />
+          <div class="hint">Used for highscores (stored on your device).</div>
+        </label>
+
+        <label class="field">
           <span>Seed</span>
           <input id="seedInput" inputmode="numeric" placeholder="auto" />
           <div class="hint">Leave empty for random. Same seed = same run.</div>
@@ -107,9 +123,24 @@
         </div>
       </form>
     </dialog>
+
+    <dialog class="modal" id="scoresModal">
+      <form method="dialog" class="modal__panel card">
+        <div class="modal__title">Highscores</div>
+
+        <div class="scores__hint" id="scoresHint">Top 10 auf diesem Gerät (lokal gespeichert).</div>
+        <div class="scores__list" id="scoresList"></div>
+
+        <div class="modal__row">
+          <button class="btn btn--ghost" id="resetScoresBtn" type="button">Reset</button>
+          <button class="btn btn--primary" value="default">Close</button>
+        </div>
+      </form>
+    </dialog>
+
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js"></script
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
