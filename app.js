@@ -440,6 +440,7 @@ const state = {
   playerName: "",
   correctCount: 0,
   wonValue: 0,
+  lastProgressSaved: 0,
   lang: "bilingual", // de | en | bilingual
   mode: "classic",   // classic | endless
   seed: Date.now() >>> 0,
@@ -563,6 +564,8 @@ function startRun(customSeed){
 
   state.correctCount = 0;
   state.wonValue = 0;
+  state.lastProgressSaved = 0;
+  state.lastProgressSaved = 0;
 
   if (!state.playerName){
     state.playerName = loadPlayerName() || \"\";
@@ -619,6 +622,12 @@ function onAnswer(idx){
     state.correctCount = Math.max(state.correctCount || 0, state.level);
     updateWonValueFromCorrectCount();
     updateWonUI();
+
+    // Save progress immediately so a single correct answer shows up in highscores
+    if ((state.wonValue || 0) > (state.lastProgressSaved || 0)){
+      state.lastProgressSaved = state.wonValue || 0;
+      addHighscore('progress');
+    }
   }
   const line = ok ? choice(state.rng, Phrase.correct) : choice(state.rng, Phrase.wrong);
   speak(t(state.lang, line.de, line.en), state.lang === "en" ? "en" : "de");
