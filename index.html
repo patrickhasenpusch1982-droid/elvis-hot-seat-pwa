@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5c400" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Elvis Hot Seat (PWA)</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__title">Elvis Hot Seat</div>
+        <div class="brand__sub" id="langLabel">DE/EN</div>
+      </div>
+
+      <button class="iconbtn" id="settingsBtn" aria-label="Settings">⚙️</button>
+    </header>
+
+    <main class="stage">
+      <section class="avatar card">
+        <div class="avatar__bubble">
+          <div class="avatar__icon" id="avatarIcon">🎤</div>
+        </div>
+        <div class="avatar__meta">
+          <div class="avatar__name">Showmaster</div>
+          <div class="avatar__state" id="avatarState">ready</div>
+          <div class="avatar__mode" id="modeLabel">Classic 15</div>
+        </div>
+        <div class="avatar__spark">✨</div>
+      </section>
+
+      <section class="ladder card" id="ladder"></section>
+
+      <section class="qcard card">
+        <div class="qcard__top">
+          <div class="pill" id="levelPill">Level 1</div>
+          <div class="pill pill--muted" id="diffPill">Difficulty 8/10</div>
+        </div>
+
+        <div class="qcard__prompt" id="prompt"></div>
+
+        <div class="qcard__explain" id="explainWrap" hidden>
+          <div class="divider"></div>
+          <div class="qcard__explainText" id="explain"></div>
+        </div>
+      </section>
+
+      <section class="answers" id="answers"></section>
+
+      <section class="lifelines">
+        <button class="btn btn--ghost" id="ll5050">50/50</button>
+        <button class="btn btn--ghost" id="llAudience">Publikum / Audience</button>
+        <button class="btn btn--ghost" id="llPhone">Telefon / Phone</button>
+      </section>
+
+      <section class="helper" id="helper" hidden></section>
+
+      <button class="btn btn--primary" id="nextBtn">Next</button>
+
+      <div class="footnote">
+        <span id="installHint"></span>
+      </div>
+    </main>
+
+    <dialog class="modal" id="settingsModal">
+      <form method="dialog" class="modal__panel card">
+        <div class="modal__title">Settings</div>
+
+        <label class="field">
+          <span>Language</span>
+          <select id="langSelect">
+            <option value="bilingual">DE/EN</option>
+            <option value="de">DE</option>
+            <option value="en">EN</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Mode</span>
+          <select id="modeSelect">
+            <option value="classic">Classic 15</option>
+            <option value="endless">Endless</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Seed</span>
+          <input id="seedInput" inputmode="numeric" placeholder="auto" />
+          <div class="hint">Leave empty for random. Same seed = same run.</div>
+        </label>
+
+        <div class="modal__row">
+          <button class="btn btn--ghost" value="cancel">Close</button>
+          <button class="btn btn--primary" id="applyBtn" value="default">Apply</button>
+        </div>
+
+        <div class="tiny">
+          iOS: Audio/TTS requires a tap first. If the voice is silent, press any button once.
+        </div>
+      </form>
+    </dialog>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+    }
+  </script>
+</body>
+</html>
