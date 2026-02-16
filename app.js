@@ -434,6 +434,7 @@ const state = {
   playerName: "",
   lang: "bilingual", // de | en | bilingual
   mode: "classic",   // classic | endless
+  scoresView: "local",
   seed: Date.now() >>> 0,
   level: 1,
   rng: mulberry32(1),
@@ -697,21 +698,68 @@ function lifelinePhone(){
 }
 
 
-function renderHighscores(){
-  const list = loadHighscores();
+
+async function renderHighscores(){
   const el = document.querySelector("#scoresList");
   const hint = document.querySelector("#scoresHint");
   if (!el) return;
 
-  if (hint){
-    hint.textContent = t(state.lang, "Top 10 auf diesem Gerät (lokal gespeichert).", "Top 10 on this device (stored locally).");
-  }
+  const localActive = (state.scoresView !== "global");
+  const btnLocal = document.querySelector("#tabLocal");
+  const btnGlobal = document.querySelector("#tabGlobal");
+  if (btnLocal) btnLocal.classList.toggle("active", localActive);
+  if (btnGlobal) btnGlobal.classList.toggle("active", !localActive);
 
-  if (!list.length){
-    el.innerHTML = `<div class="scores__hint">${t(state.lang,"Noch keine Scores.","No scores yet.")}</div>`;
+  if (localActive){
+    const list = loadHighscores();
+    if (hint){
+      hint.textContent = t(state.lang, "Top 10 auf diesem Gerät (lokal gespeichert).", "Top 10 on this device (stored locally).");
+    }
+    if (!list.length){
+      el.innerHTML = `<div class="scores__hint">${t(state.lang,"Noch keine Scores.","No scores yet.")}</div>`;
+      return;
+    }
+    el.innerHTML = "";
+    list.forEach((s, i) => {
+      const row = document.createElement("div");
+      row.className = "scoreRow";
+      row.innerHTML = `
+        <div class="scoreRow__rank">${i+1}.</div>
+        <div class="scoreRow__name">${escapeHtml(s.name || "")}
+          <div class="scoreRow__meta">${escapeHtml((s.mode||"") + " · L" + (s.completedLevels||0))}</div>
+        </div>
+        <div class="scoreRow__value">${formatMoney(s.score || 0)}</div>
+      `;
+      el.appendChild(row);
+    });
     return;
   }
 
+  // Global
+  const cfg = getGlobalConfig();
+  if (hint){
+    hint.textContent = cfg
+      ? t(state.lang, "Global Top 10 (geteilt).", "Global Top 10 (shared).")
+      : t(state.lang, "Global nicht konfiguriert (siehe README).", "Global not configured (see README).");
+  }
+  if (!cfg){
+    el.innerHTML = `<div class="scores__hint">${t(state.lang,
+      "Du musst Supabase konfigurieren: config.js ausfüllen + Tabelle anlegen.",
+      "You need to configure Supabase: fill config.js + create the table.")}</div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="scores__hint">${t(state.lang,"Lade…","Loading…")}</div>`;
+  const res = await fetchGlobalTop10();
+  if (!res.ok){
+    el.innerHTML = `<div class="scores__hint">${t(state.lang,"Fehler: ","Error: ")}${escapeHtml(res.error || "")}</div>`;
+    return;
+  }
+  const list = res.data || [];
+  if (!list.length){
+    el.innerHTML = `<div class="scores__hint">${t(state.lang,"Noch keine globalen Scores.","No global scores yet.")}</div>`;
+    return;
+  }
   el.innerHTML = "";
   list.forEach((s, i) => {
     const row = document.createElement("div");
@@ -719,17 +767,75 @@ function renderHighscores(){
     row.innerHTML = `
       <div class="scoreRow__rank">${i+1}.</div>
       <div class="scoreRow__name">${escapeHtml(s.name || "")}
-        <div class="scoreRow__meta">${escapeHtml((s.mode||"") + " · L" + (s.completedLevels||0))}</div>
+        <div class="scoreRow__meta">${escapeHtml((s.mode||"") + " · L" + (s.completed_levels||0))}</div>
       </div>
       <div class="scoreRow__value">${formatMoney(s.score || 0)}</div>
     `;
     el.appendChild(row);
   });
 }
+
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, (m) => ({
     "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
   }[m]));
+}
+
+
+// ---------- Global Highscore (Supabase, optional) ----------
+function getGlobalConfig(){
+  const cfg = (window.EHS_CONFIG || {});
+  const url = (cfg.SUPABASE_URL || "").trim();
+  const key = (cfg.SUPABASE_ANON_KEY || "").trim();
+  if (!url || !key) return null;
+  return { url, key };
+}
+
+async function fetchGlobalTop10(){
+  const cfg = getGlobalConfig();
+  if (!cfg) return { ok:false, error: t(state.lang,"Global nicht konfiguriert.","Global not configured.") };
+
+  const endpoint = cfg.url.replace(/\/$/,"") + "/rest/v1/scores?select=name,score,mode,completed_levels,created_at&order=score.desc,created_at.desc&limit=10";
+  try{
+    const res = await fetch(endpoint, {
+      headers: {
+        "apikey": cfg.key,
+        "Authorization": "Bearer " + cfg.key
+      }
+    });
+    if (!res.ok) return { ok:false, error: "HTTP " + res.status };
+    const data = await res.json();
+    return { ok:true, data };
+  }catch(e){
+    return { ok:false, error: String(e) };
+  }
+}
+
+async function pushGlobalScore(entry){
+  const cfg = getGlobalConfig();
+  if (!cfg) return;
+
+  const endpoint = cfg.url.replace(/\/$/,"") + "/rest/v1/scores";
+  const payload = {
+    name: entry.name,
+    score: entry.score,
+    mode: entry.mode,
+    completed_levels: entry.completedLevels
+  };
+  try{
+    await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": cfg.key,
+        "Authorization": "Bearer " + cfg.key,
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(payload)
+    });
+  }catch(e){
+    // silent
+  }
 }
 
 // ---------- Settings / install hints ----------
@@ -785,6 +891,7 @@ function addHighscore(reason){
   list.sort((a,b) => (b.score - a.score) || (b.completedLevels - a.completedLevels));
   const top10 = list.slice(0,10);
   saveHighscores(top10);
+  pushGlobalScore(entry);
 }
 
 
@@ -801,6 +908,7 @@ on("#llAudience","click", lifelineAudience);
 on("#llPhone","click", lifelinePhone);
 
 on("#scoresBtn","click", () => {
+  state.scoresView = "local";
   renderHighscores();
   const d=$("#scoresModal"); if (d && d.showModal) d.showModal();
 });
@@ -809,6 +917,21 @@ on("#resetScoresBtn","click", () => {
   saveHighscores([]);
   renderHighscores();
 });
+
+
+on("#tabLocal","click", () => {
+  state.scoresView = "local";
+  renderHighscores();
+});
+on("#tabGlobal","click", () => {
+  state.scoresView = "global";
+  renderHighscores();
+});
+on("#refreshGlobalBtn","click", () => {
+  state.scoresView = "global";
+  renderHighscores();
+});
+
 
 on("#settingsBtn","click", () => {
   const si=$("#seedInput"); if (si) si.value = "";
