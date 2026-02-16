@@ -459,6 +459,25 @@ function startRun(customSeed){
   speak(readPromptForSpeech(state.q.prompt), state.lang === "en" ? "en" : "de");
 }
 
+
+function restartRun(reason){
+  // restart from level 1 (same seed) and reset lifelines
+  state.level = 1;
+  state.used = { ll5050:false, llAudience:false, llPhone:false };
+  state.eliminated = new Set();
+  state.poll = null;
+  state.phone = null;
+  loadQuestion();
+  renderQuestion();
+
+  if (reason){
+    speak(reason, state.lang === "en" ? "en" : "de");
+  }
+  // read next question
+  speak(readPromptForSpeech(state.q.prompt), state.lang === "en" ? "en" : "de");
+}
+
+
 function readPromptForSpeech(prompt){
   if (state.lang !== "bilingual") return prompt;
   // In bilingual mode: speak first chunk (DE)
@@ -476,6 +495,15 @@ function onAnswer(idx){
   const ok = idx === state.q.correctIndex;
   const line = ok ? choice(state.rng, Phrase.correct) : choice(state.rng, Phrase.wrong);
   speak(t(state.lang, line.de, line.en), state.lang === "en" ? "en" : "de");
+
+  if (!ok){
+    const msg = t(state.lang,
+      "Falsch. Du startest wieder bei Level 1.",
+      "Wrong. Back to level 1."
+    );
+    // Give a moment for the user to see the result/explanation, then restart.
+    setTimeout(() => restartRun(msg), 1300);
+  }
 }
 
 function next(){
