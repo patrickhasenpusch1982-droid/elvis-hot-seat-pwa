@@ -37,8 +37,8 @@ function saveHighscores(arr){
 }
 function formatMoney(n){
   // display like 12.5K, 1M, etc.
-  if (n >= 1_000_000) return (n/1_000_000).toFixed(n%1_000_000===0?0:1) + "M";
-  if (n >= 1_000) return (n/1_000).toFixed(n%1_000===0?0:1) + "K";
+  if (n >= 1000000) return (n/1000000).toFixed(n%1000000===0?0:1) + "M";
+  if (n >= 1000) return (n/1000).toFixed(n%1000===0?0:1) + "K";
   return String(n);
 }
 
@@ -121,7 +121,11 @@ const defaultDB = {
 };
 
 let DB = defaultDB;
-const byId = (arr) => Object.fromEntries(arr.map(x => [x.id, x]));
+function byId(arr){
+  var o = {};
+  for (var i=0;i<arr.length;i++){ o[arr[i].id] = arr[i]; }
+  return o;
+}
 let STUDIO = byId(DB.studios);
 let PERSON = byId(DB.people);
 let FILM = byId(DB.films);
@@ -560,7 +564,7 @@ function loadQuestion(){
 }
 
 function startRun(customSeed){
-  state.seed = (customSeed ?? (Date.now() >>> 0)) >>> 0;
+  state.seed = ((customSeed !== undefined && customSeed !== null) ? customSeed : (Date.now() >>> 0)) >>> 0;
   state.level = 1;
   state.rng = mulberry32((state.seed ^ 0x9E3779B9) >>> 0);
 
