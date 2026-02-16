@@ -718,7 +718,9 @@ function renderHighscores(){
     row.className = "scoreRow";
     row.innerHTML = `
       <div class="scoreRow__rank">${i+1}.</div>
-      <div class="scoreRow__name">${escapeHtml(s.name || "")}</div>
+      <div class="scoreRow__name">${escapeHtml(s.name || "")}
+        <div class="scoreRow__meta">${escapeHtml((s.mode||"") + " · L" + (s.completedLevels||0))}</div>
+      </div>
       <div class="scoreRow__value">${formatMoney(s.score || 0)}</div>
     `;
     el.appendChild(row);
@@ -768,8 +770,7 @@ function addHighscore(reason){
   const score = getWonValue();
   const completed = Math.max(0, state.level - 1);
   const name = (state.playerName || "").trim() || (state.lang === "de" ? "Spieler" : "Player");
-  // Only record if player earned something or reached at least 1 correct answer
-  if (completed <= 0 && score <= 0) return;
+  // Record even if score is 0 (so first-round losses still appear)
 
   const entry = {
     name,
