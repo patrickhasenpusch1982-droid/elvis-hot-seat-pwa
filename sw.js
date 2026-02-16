@@ -1,11 +1,10 @@
 
-const CACHE_NAME = "elvis-hot-seat-v8";
+const CACHE_NAME = "elvis-hot-seat-v7";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
-  "./config.js",
   "./manifest.json",
   "./elvis-db.json",
   "./icon-192.png",
@@ -28,29 +27,6 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
-
-  // Network-first for data/config so edits go live immediately.
-  if (url.pathname.endsWith("/elvis-db.json") || url.pathname.endsWith("elvis-db.json") ||
-      url.pathname.endsWith("/config.js") || url.pathname.endsWith("config.js")) {
-    event.respondWith(
-      fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-        return res;
-      }).catch(() => caches.match(req))
-    );
-    return;
-  }
-
-  // App shell: cache-first
-  event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req).then((res) => {
-      const copy = res.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-      return res;
-    }).catch(() => caches.match("./index.html")))
-  );
-});
 
   // Data file: network-first so edits go live immediately.
   if (url.pathname.endsWith("/elvis-db.json") || url.pathname.endsWith("elvis-db.json")) {

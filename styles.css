@@ -183,12 +183,3 @@ body{
 .scores__hint{ color: var(--muted); font-size: 12px; }
 
 .scoreRow__meta{ font-size:12px; color: var(--muted); font-weight:700; margin-top:2px; }
-
-
-.scoresTabs{ display:flex; gap:10px; margin-top:10px; }
-.scoresTabs__btn{ padding: 10px 12px; border-radius: 14px; }
-.scoresTabs__btn.active{
-  background: rgba(245,196,0,.95);
-  border-color: rgba(245,196,0,.95);
-  color:#140016;
-}

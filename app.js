@@ -396,20 +396,26 @@ const PrizeSteps =
 // Prize ladder values (not copying TV branding; simple custom ladder)
 const PRIZE_VALUES = [50,100,200,400,800,1600,3200,6400,12500,25000,50000,100000,250000,500000,1000000];
 
-function getWonValue(){
-  if (state.mode !== "classic") {
-    // Endless: simple scaling (adjust as you like)
-    // Won value based on completed levels (level-1 correct answers)
-    const completed = Math.max(0, state.level - 1);
-    return completed * 100; // 100 points per level
+function updateWonValueFromCorrectCount(){
+  const c = Math.max(0, state.correctCount || 0);
+  if (state.mode !== "classic"){
+    state.wonValue = c * 100; // Endless: 100 points per correct answer
+    return;
   }
-  const completed = Math.max(0, state.level - 1);
-  if (completed <= 0) return 0;
-  const idx = Math.min(PRIZE_VALUES.length, completed) - 1;
-  return PRIZE_VALUES[idx];
+  if (c <= 0){ state.wonValue = 0; return; }
+  const idx = Math.min(PRIZE_VALUES.length, c) - 1;
+  state.wonValue = PRIZE_VALUES[idx];
+}
+
+
+function getWonValue(){
+  // This is the money/points actually secured by correct answers so far.
+  // We do NOT rely on (level-1) because the player advances only after tapping Next.
+  return state.wonValue || 0;
 }
 
 function updateWonUI(){
+  updateWonValueFromCorrectCount();
   const won = getWonValue();
   const name = state.playerName || (state.lang === "de" ? "Spieler" : "Player");
   const wonLabel = formatMoney(won);
@@ -432,9 +438,10 @@ function updateWonUI(){
 
 const state = {
   playerName: "",
+  correctCount: 0,
+  wonValue: 0,
   lang: "bilingual", // de | en | bilingual
   mode: "classic",   // classic | endless
-  scoresView: "local",
   seed: Date.now() >>> 0,
   level: 1,
   rng: mulberry32(1),
@@ -554,6 +561,9 @@ function startRun(customSeed){
   state.level = 1;
   state.rng = mulberry32((state.seed ^ 0x9E3779B9) >>> 0);
 
+  state.correctCount = 0;
+  state.wonValue = 0;
+
   if (!state.playerName){
     state.playerName = loadPlayerName() || \"\";
   }
@@ -571,6 +581,8 @@ function startRun(customSeed){
 function restartRun(reason){
   // restart from level 1 (same seed) and reset lifelines
   state.level = 1;
+  state.correctCount = 0;
+  state.wonValue = 0;
   state.used = { ll5050:false, llAudience:false, llPhone:false };
   state.eliminated = new Set();
   state.poll = null;
@@ -601,6 +613,13 @@ function onAnswer(idx){
   renderQuestion();
 
   const ok = idx === state.q.correctIndex;
+
+  if (ok){
+    // Each correctly answered question counts immediately (even before Next is tapped)
+    state.correctCount = Math.max(state.correctCount || 0, state.level);
+    updateWonValueFromCorrectCount();
+    updateWonUI();
+  }
   const line = ok ? choice(state.rng, Phrase.correct) : choice(state.rng, Phrase.wrong);
   speak(t(state.lang, line.de, line.en), state.lang === "en" ? "en" : "de");
 
@@ -698,68 +717,21 @@ function lifelinePhone(){
 }
 
 
-
-async function renderHighscores(){
+function renderHighscores(){
+  const list = loadHighscores();
   const el = document.querySelector("#scoresList");
   const hint = document.querySelector("#scoresHint");
   if (!el) return;
 
-  const localActive = (state.scoresView !== "global");
-  const btnLocal = document.querySelector("#tabLocal");
-  const btnGlobal = document.querySelector("#tabGlobal");
-  if (btnLocal) btnLocal.classList.toggle("active", localActive);
-  if (btnGlobal) btnGlobal.classList.toggle("active", !localActive);
-
-  if (localActive){
-    const list = loadHighscores();
-    if (hint){
-      hint.textContent = t(state.lang, "Top 10 auf diesem Gerät (lokal gespeichert).", "Top 10 on this device (stored locally).");
-    }
-    if (!list.length){
-      el.innerHTML = `<div class="scores__hint">${t(state.lang,"Noch keine Scores.","No scores yet.")}</div>`;
-      return;
-    }
-    el.innerHTML = "";
-    list.forEach((s, i) => {
-      const row = document.createElement("div");
-      row.className = "scoreRow";
-      row.innerHTML = `
-        <div class="scoreRow__rank">${i+1}.</div>
-        <div class="scoreRow__name">${escapeHtml(s.name || "")}
-          <div class="scoreRow__meta">${escapeHtml((s.mode||"") + " · L" + (s.completedLevels||0))}</div>
-        </div>
-        <div class="scoreRow__value">${formatMoney(s.score || 0)}</div>
-      `;
-      el.appendChild(row);
-    });
-    return;
-  }
-
-  // Global
-  const cfg = getGlobalConfig();
   if (hint){
-    hint.textContent = cfg
-      ? t(state.lang, "Global Top 10 (geteilt).", "Global Top 10 (shared).")
-      : t(state.lang, "Global nicht konfiguriert (siehe README).", "Global not configured (see README).");
+    hint.textContent = t(state.lang, "Top 10 auf diesem Gerät (lokal gespeichert).", "Top 10 on this device (stored locally).");
   }
-  if (!cfg){
-    el.innerHTML = `<div class="scores__hint">${t(state.lang,
-      "Du musst Supabase konfigurieren: config.js ausfüllen + Tabelle anlegen.",
-      "You need to configure Supabase: fill config.js + create the table.")}</div>`;
+
+  if (!list.length){
+    el.innerHTML = `<div class="scores__hint">${t(state.lang,"Noch keine Scores.","No scores yet.")}</div>`;
     return;
   }
 
-  el.innerHTML = `<div class="scores__hint">${t(state.lang,"Lade…","Loading…")}</div>`;
-  const res = await fetchGlobalTop10();
-  if (!res.ok){
-    el.innerHTML = `<div class="scores__hint">${t(state.lang,"Fehler: ","Error: ")}${escapeHtml(res.error || "")}</div>`;
-    return;
-  }
-  const list = res.data || [];
-  if (!list.length){
-    el.innerHTML = `<div class="scores__hint">${t(state.lang,"Noch keine globalen Scores.","No global scores yet.")}</div>`;
-    return;
-  }
   el.innerHTML = "";
   list.forEach((s, i) => {
     const row = document.createElement("div");
@@ -767,75 +739,17 @@ async function renderHighscores(){
     row.innerHTML = `
       <div class="scoreRow__rank">${i+1}.</div>
       <div class="scoreRow__name">${escapeHtml(s.name || "")}
-        <div class="scoreRow__meta">${escapeHtml((s.mode||"") + " · L" + (s.completed_levels||0))}</div>
+        <div class="scoreRow__meta">${escapeHtml((s.mode||"") + " · L" + (s.completedLevels||0))}</div>
       </div>
       <div class="scoreRow__value">${formatMoney(s.score || 0)}</div>
     `;
     el.appendChild(row);
   });
 }
-
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, (m) => ({
     "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
   }[m]));
-}
-
-
-// ---------- Global Highscore (Supabase, optional) ----------
-function getGlobalConfig(){
-  const cfg = (window.EHS_CONFIG || {});
-  const url = (cfg.SUPABASE_URL || "").trim();
-  const key = (cfg.SUPABASE_ANON_KEY || "").trim();
-  if (!url || !key) return null;
-  return { url, key };
-}
-
-async function fetchGlobalTop10(){
-  const cfg = getGlobalConfig();
-  if (!cfg) return { ok:false, error: t(state.lang,"Global nicht konfiguriert.","Global not configured.") };
-
-  const endpoint = cfg.url.replace(/\/$/,"") + "/rest/v1/scores?select=name,score,mode,completed_levels,created_at&order=score.desc,created_at.desc&limit=10";
-  try{
-    const res = await fetch(endpoint, {
-      headers: {
-        "apikey": cfg.key,
-        "Authorization": "Bearer " + cfg.key
-      }
-    });
-    if (!res.ok) return { ok:false, error: "HTTP " + res.status };
-    const data = await res.json();
-    return { ok:true, data };
-  }catch(e){
-    return { ok:false, error: String(e) };
-  }
-}
-
-async function pushGlobalScore(entry){
-  const cfg = getGlobalConfig();
-  if (!cfg) return;
-
-  const endpoint = cfg.url.replace(/\/$/,"") + "/rest/v1/scores";
-  const payload = {
-    name: entry.name,
-    score: entry.score,
-    mode: entry.mode,
-    completed_levels: entry.completedLevels
-  };
-  try{
-    await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": cfg.key,
-        "Authorization": "Bearer " + cfg.key,
-        "Prefer": "return=minimal"
-      },
-      body: JSON.stringify(payload)
-    });
-  }catch(e){
-    // silent
-  }
 }
 
 // ---------- Settings / install hints ----------
@@ -874,7 +788,7 @@ function unlockTTS(){
 
 function addHighscore(reason){
   const score = getWonValue();
-  const completed = Math.max(0, state.level - 1);
+  const completed = Math.max(0, state.correctCount || 0);
   const name = (state.playerName || "").trim() || (state.lang === "de" ? "Spieler" : "Player");
   // Record even if score is 0 (so first-round losses still appear)
 
@@ -891,7 +805,6 @@ function addHighscore(reason){
   list.sort((a,b) => (b.score - a.score) || (b.completedLevels - a.completedLevels));
   const top10 = list.slice(0,10);
   saveHighscores(top10);
-  pushGlobalScore(entry);
 }
 
 
@@ -908,7 +821,6 @@ on("#llAudience","click", lifelineAudience);
 on("#llPhone","click", lifelinePhone);
 
 on("#scoresBtn","click", () => {
-  state.scoresView = "local";
   renderHighscores();
   const d=$("#scoresModal"); if (d && d.showModal) d.showModal();
 });
@@ -917,21 +829,6 @@ on("#resetScoresBtn","click", () => {
   saveHighscores([]);
   renderHighscores();
 });
-
-
-on("#tabLocal","click", () => {
-  state.scoresView = "local";
-  renderHighscores();
-});
-on("#tabGlobal","click", () => {
-  state.scoresView = "global";
-  renderHighscores();
-});
-on("#refreshGlobalBtn","click", () => {
-  state.scoresView = "global";
-  renderHighscores();
-});
-
 
 on("#settingsBtn","click", () => {
   const si=$("#seedInput"); if (si) si.value = "";
