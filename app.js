@@ -786,37 +786,44 @@ function addHighscore(reason){
   saveHighscores(top10);
 }
 
-// ---------- Events ----------
-$("#nextBtn").addEventListener("click", next);
-$("#ll5050").addEventListener("click", lifeline5050);
-$("#llAudience").addEventListener("click", lifelineAudience);
-$("#llPhone").addEventListener("click", lifelinePhone);
 
-$("#scoresBtn").addEventListener("click", () => {
+function on(sel, evt, handler){
+  const el = document.querySelector(sel);
+  if (!el) return;
+  el.addEventListener(evt, handler);
+}
+
+// ---------- Events ----------
+on("#nextBtn","click", next);
+on("#ll5050","click", lifeline5050);
+on("#llAudience","click", lifelineAudience);
+on("#llPhone","click", lifelinePhone);
+
+on("#scoresBtn","click", () => {
   renderHighscores();
-  $("#scoresModal").showModal();
+  const d=$("#scoresModal"); if (d && d.showModal) d.showModal();
 });
 
-$("#resetScoresBtn").addEventListener("click", () => {
+on("#resetScoresBtn","click", () => {
   saveHighscores([]);
   renderHighscores();
 });
 
-$("#settingsBtn").addEventListener("click", () => {
-  $("#seedInput").value = "";
-  $("#nameInput").value = state.playerName || loadPlayerName() || "";
-  $("#langSelect").value = state.lang;
-  $("#modeSelect").value = state.mode;
-  $("#seedInput").placeholder = String(state.seed);
-  $("#settingsModal").showModal();
+on("#settingsBtn","click", () => {
+  const si=$("#seedInput"); if (si) si.value = "";
+  const ni=$("#nameInput"); if (ni) ni.value = state.playerName || loadPlayerName() || "";
+  const ls=$("#langSelect"); if (ls) ls.value = state.lang;
+  const ms=$("#modeSelect"); if (ms) ms.value = state.mode;
+  if (si) si.placeholder = String(state.seed);
+  const d=$("#settingsModal"); if (d && d.showModal) d.showModal();
 });
 
-$("#applyBtn").addEventListener("click", (ev) => {
+on("#applyBtn","click", (ev) => {
   ev.preventDefault();
-  const lang = $("#langSelect").value;
-  const nameStr = ($("#nameInput").value || "").trim();
-  const mode = $("#modeSelect").value;
-  const seedStr = $("#seedInput").value.trim();
+  const lang = (document.querySelector("#langSelect")?.value) || state.lang;
+  const nameStr = ((document.querySelector("#nameInput")?.value) || "").trim();
+  const mode = (document.querySelector("#modeSelect")?.value) || state.mode;
+  const seedStr = ((document.querySelector("#seedInput")?.value) || "").trim();
 
   state.lang = lang;
 
@@ -827,7 +834,7 @@ $("#applyBtn").addEventListener("click", (ev) => {
   const seed = seedStr ? (parseInt(seedStr, 10) >>> 0) : undefined;
   startRun(seed);
   showInstallHint();
-  $("#settingsModal").close();
+  const d=$("#settingsModal"); if (d && d.close) d.close();
 });
 
 // Initial boot
